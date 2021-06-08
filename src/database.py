@@ -1,4 +1,5 @@
 import psycopg2 as db
+import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
@@ -10,14 +11,51 @@ DB_DATABASE = os.environ.get("DB_DATABASE")
 DB_USER = os.environ.get("DB_USER")
 DB_PASSWORD = os.environ.get("DB_PASSWORD")
 
-connection = db.connect(dbname=DB_DATABASE, host=DB_HOST, user=DB_USER, password=DB_PASSWORD)
+class Config:
+    def __init__(self):
+        self.config = {
+            "postgres": {
+                "user": DB_USER,
+                "password": DB_PASSWORD,
+                "host": DB_HOST,
+                "database": DB_DATABASE,
+            }
+        }
+    
+class Connection(Config):
+    def __init__(self):
+        Config.__init__(self)
+        try:
+            self.conn = db.connect(**self.config["postgres"])
+            self.cur = self.conn.cursor()
+        except Exception as e:
+            print("Erro na conexão", e)
+            exit(1)
+    
+    def __enter__(self):
+        return self
 
-cursor = connection.cursor()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.commit()
+        self.connection.close()
 
-# cursor.execute("SELECT * FROM cenario1_salas")
+    @property
+    def connection(self):
+        return self.conn
+    
+    @property
+    def cursor(self):
+        return self.cur
 
-# print(cursor.fetchall())
+    def commit(self):
+        self.connection.commit()
 
-connection.commit()
+    def fetchall(self):
+        return self.cursor.fetchall()
 
-cursor.close()
+    def execute(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+
+    def query(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+        return self.fetchall()

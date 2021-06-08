@@ -1,20 +1,28 @@
 import streamlit as st
 import pandas as pd
-from os.path import join, dirname
+import database as db
+from modeling import allocation
 # import numpy as np
 # import matplotlib.pylab as plt 
 
-# setup
-uri_salas1 = join(dirname(__file__), '..', 'data','cenario1-salas.csv' )
-uri_turmas1 = join(dirname(__file__), '..', 'data','cenario1-turmas.csv' )
-uri_salas2 = join(dirname(__file__), '..', 'data','cenario2-salas.csv' )
-uri_turmas2 = join(dirname(__file__), '..', 'data','cenario2-turmas.csv' )
+# setup & connection with database
+connection = db.Connection()
 
-data_salas1 = pd.read_csv(uri_salas1)
-data_turmas1 = pd.read_csv(uri_turmas1)
+connection.execute("SELECT * FROM cenario1_salas")
+data_salas1 = connection.fetchall()
+data_salas1 = pd.DataFrame(data_salas1, columns=['id_sala','numero_cadeiras','acessivel','qualidade'] )
 
-data_salas2 = pd.read_csv(uri_salas2)
-data_turmas2 = pd.read_csv(uri_turmas2)
+connection.execute("SELECT * FROM cenario1_turmas")
+data_turmas1 = connection.fetchall()
+data_turmas1 = pd.DataFrame(data_turmas1, columns=['disciplina','professor','dias_horario','numero_alunos','curso','período','acessibilidade','qualidade'] )
+
+connection.execute("SELECT * FROM cenario2_salas")
+data_salas2 = connection.fetchall()
+data_salas2 = pd.DataFrame(data_salas2, columns=['id_sala','numero_cadeiras','acessivel','qualidade'] )
+
+connection.execute("SELECT * FROM cenario2_turmas")
+data_turmas2 = connection.fetchall()
+data_turmas2 = pd.DataFrame(data_turmas2, columns=['disciplina','professor','dias_horario','numero_alunos','curso','período','acessibilidade','qualidade'] )
 
 # header
 st.title("PASA")
@@ -44,6 +52,12 @@ if st.sidebar.checkbox("Mostrar dados dos cenário"):
 # main screen
 
 if st.button('Alocar salas'):
+    if cenario  == "cenário 1":
+        df = allocation(data_salas1, data_turmas1)
+    elif cenario  == "cenário 2":
+        df = allocation(data_salas2, data_turmas2)
+    st.write(df)
+
     #otimization = 75
     #st.markdown(f"Taxa média de Ocupação: {otimization}%")
     st.markdown("### Trocar turma")
