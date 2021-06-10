@@ -1,4 +1,4 @@
-import psycopg2 as db
+import psycopg2
 import psycopg2.extras as extras
 import os
 from os.path import join, dirname
@@ -12,6 +12,8 @@ DB_DATABASE = os.environ.get("DB_DATABASE")
 DB_USER = os.environ.get("DB_USER")
 DB_PASSWORD = os.environ.get("DB_PASSWORD")
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
 class Config:
     def __init__(self):
         self.config = {
@@ -24,11 +26,10 @@ class Config:
             }
         }
     
-class Connection(Config):
+class Connection():
     def __init__(self):
-        Config.__init__(self)
         try:
-            self.conn = db.connect(**self.config["postgres"], sslmode='require')
+            self.conn = psycopg2.connect(DATABASE_URL, sslmode='require')
             self.cur = self.conn.cursor()
         except Exception as e:
             print("Erro na conexão", e)
@@ -61,8 +62,8 @@ class Connection(Config):
         self.cursor.execute(sql, params or ())
         return self.fetchall()
 
-    def copy_from(self, args):
-        self.cursor.copy_from(args)
+    def copy_from(self, data, table_name):
+        self.cursor.copy_from(data, table_name, sep=','))
 
     def insert_values(self, df, table):
         """
@@ -88,12 +89,15 @@ class Connection(Config):
 
         # executando comando SQL para inserção
         query  = "INSERT INTO %s(%s) VALUES %%s" % (table, cols)
+        
         cursor = self.cursor()
+        #conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        #cur = conn.cursor()
 
         try:
             extras.execute_values(cursor, query, tuples)
             # self.commit()
-        except (Exception, db.DatabaseError) as error:
+        except (Exception, DatabaseError) as error:
             print("Error: %s" % error)
             self.rollback()
             return 1
