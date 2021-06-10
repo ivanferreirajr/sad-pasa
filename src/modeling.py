@@ -35,7 +35,7 @@ def find_class(turma, horario, salas, solution):
                     return salas['numero_cadeiras'][i], salas['id_sala'][i]
 
 def allocation(salas, turmas):
-    solution = { 'horario': [], 'id_sala': [], 'disciplina': [], 'professor': [], 'numero_cadeiras': [], 'numero_alunos': [] }
+    solution = { 'id': [], 'horario': [], 'id_sala': [], 'disciplina': [], 'professor': [], 'numero_cadeiras': [], 'numero_alunos': [] }
   
     for i in turmas.index:
         dias_horario = turmas['dias_horario'][i].split("-")
@@ -57,6 +57,7 @@ def allocation(salas, turmas):
                 pass
             else:
                 numero_cadeiras, sala_horario = find_class(turma, horario, salas, solution)
+                solution['id'].append(len(solution['id']) + 1)
                 solution['horario'].append(horario)
                 solution['id_sala'].append(sala_horario)
                 solution['disciplina'].append(turma.disciplina)
