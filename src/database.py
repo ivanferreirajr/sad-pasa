@@ -63,7 +63,7 @@ class Connection():
         return self.fetchall()
 
     def copy_from(self, data, table_name):
-        self.cursor.copy_from(data, table_name, sep=','))
+        self.cursor.copy_from(data, table_name, sep=',')
 
     def insert_values(self, df, table):
         """
