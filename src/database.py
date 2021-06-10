@@ -1,4 +1,5 @@
 import psycopg2 as db
+import psycopg2.extras as extras
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -59,3 +60,40 @@ class Connection(Config):
     def query(self, sql, params=None):
         self.cursor.execute(sql, params or ())
         return self.fetchall()
+
+def insert_values(conn, df, table):
+    """
+    Usando psycopg2.extras.execute_values() para inserir dataframe no banco de dados
+    
+    Params:
+        conn: Connection
+        df : DataFrame
+        table_name: str
+
+    Returns:
+        void
+
+    Raises: 
+        DatabaseError: inserção não foi realizada com sucesso
+    """
+
+    # criando uma lista de tupples a partir dos valores do dataframe
+    tuples = [tuple(x) for x in df.to_numpy()]
+
+    # colunas de dataframe separadas por vírgula
+    cols = ','.join(list(df.columns))
+
+    # executando comando SQL para inserção
+    query  = "INSERT INTO %s(%s) VALUES %%s" % (table, cols)
+    cursor = conn.cursor()
+
+    try:
+        extras.execute_values(cursor, query, tuples)
+        conn.commit()
+    except (Exception, db.DatabaseError) as error:
+        print("Error: %s" % error)
+        conn.rollback()
+        cursor.close()
+        return 1
+    print("Inserção dos dados finalizada ✔")
+    cursor.close()
