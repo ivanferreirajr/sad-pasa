@@ -1,17 +1,19 @@
 # Problema de Alocação de Salas de Aula
 
-### Objetivo
+## Objetivo
+O principal objetivo é aumentar a efetividade da distribuição de salas de uma universidade. O problema estudo é enominado Problema da Alocação de Salas de Aula (PASA) é um subproblema do Problemas da Tabela de Horários de Cursos Universitários.
 
-### Tecnologias
-- Python 
+## Tecnologias
+- Python
 - Streamlit
 - Pandas
-- Psycopg2
+- Psycopg
 
-### Guia de Instalação
+## Guia de Instalação
 
-Você precisará de Python 3 e pip. É recomendado utilizar ambientes virtuais
-com o virtualenv e o arquivo `requirements.txt` para instalar os pacotes dependências:
+Você precisará de Python 3 e pip. É recomendado utilizar ambientes virtuais com o virtualenv e o arquivo `requirements.txt` para instalar os pacotes dependências:
+
+Linux
 
 ```bash
 $ pip3 install virtualenv
@@ -35,9 +37,9 @@ Quando finalizado, você pode desativar o ambiente virtual do virtualenv com:
 $ deactivate
 ```
 
-### Deploy
+## Deploy
 
-🚀 [Deploy on Heroku]()
+- [Deploy on Heroku](https://sad-pasa.herokuapp.com/) 🚀
 
 ---
-Obs: Os dados são fictícios, mas tentam representar a realidade de uma base de Turmas e Salas da UFS 
+Obs: Os dados são fictícios, mas tentam representar a realidade de uma base de turmas e salas da UFS
