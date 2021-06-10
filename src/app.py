@@ -21,18 +21,27 @@ data_turmas2 = pd.DataFrame(data_turmas2, columns=['disciplina','professor','dia
 
 # functions
 @st.cache
-def replace_class(turma_1, turma_2):
-    print("calma")
+def replace_class(conn, table_name, id_turma1, id_turma2):
+    consulta_1 = f"SELECT horario, id_sala FROM {table_name} WHERE id_sala = {id_turma1};"
+    consulta_2 = f"SELECT horario, id_sala FROM {table_name} WHERE id_sala = {id_turma2};"
+    horario1, id_sala1 = conn.query(consulta_1)
+    horario2, id_sala2 = conn.query(consulta_2)
+
+    conn.execute(f"UPDATE {table_name} SET id_sala = {id_sala1}, horario = {horario1} WHERE id_sala = {id_sala2};")
+    conn.execute(f"UPDATE {table_name} SET id_sala = {id_sala2}, horario = {horario2} WHERE id_sala = {id_sala1};")
+
+    df = connection.query(f"SELECT * FROM {table_name}")
+    df = pd.DataFrame(df, columns=['horario','id_sala','disciplina','professor', 'numero_cadeiras', 'numero_alunos'] )
+
+    return df
 
 @st.cache
 def occupancy_rate(data):
     rate = data['numero_alunos'] * 100 / data['numero_cadeiras']
     return np.mean(rate)
 
-@st.cache
 def allocation_table(data, table_name):
-    connection.cursor.copy_from(data, table_name, null='', sep=',')
-    connection.commit()
+    connection.copy_from(data, table_name, null='', sep=',')
 
 # header
 st.title("PASA")
@@ -63,10 +72,12 @@ if st.sidebar.checkbox("Mostrar dados dos cenário"):
 if st.button('Alocar salas'):
     if cenario  == "cenário 1":
         df = allocation(data_salas1, data_turmas1)
-        #db.insert_values(connection, df, 'turmas_alocadas_cenario1')
+        table = 'turmas_alocadas_cenario1'
     elif cenario  == "cenário 2":
         df = allocation(data_salas2, data_turmas2)
-        #db.insert_values(connection, df, 'turmas_alocadas_cenario2')
+        table = 'turmas_alocadas_cenario2'
+    connection.insert_values(df, table)
+    # allocation_table(df, table)
     st.write(df)
 
     st.markdown(f"Taxa ocupação média: {round(occupancy_rate(df), 2)}%")
@@ -78,8 +89,7 @@ if st.button('Alocar salas'):
     with input2:
         st.text_input("Horario/Sala - 2", 'ex: 25')
     if st.button('Trocar'):
-        st.write(input1)
-        #df = replace_class(input1, input2)
+        df = replace_class(connection, table, input1, input2)
     
     # dataviz
     st.markdown("### Gráficos")
