@@ -21,27 +21,37 @@ data_turmas2 = pd.DataFrame(data_turmas2, columns=['disciplina','professor','dia
 
 # functions
 @st.cache
-def replace_class(conn, table_name, id_turma1, id_turma2):
-    consulta_1 = f"SELECT horario, id_sala FROM {table_name} WHERE id_sala = {id_turma1};"
-    consulta_2 = f"SELECT horario, id_sala FROM {table_name} WHERE id_sala = {id_turma2};"
-    horario1, id_sala1 = conn.query(consulta_1)
-    horario2, id_sala2 = conn.query(consulta_2)
+def change_class(conn, table_name, id_turma1, id_turma2):
+    query = f"SELECT horario, id_sala FROM {table_name} WHERE id_sala = %s;"
+    horario1, id_sala1 = conn.query(query, id_turma1)
+    horario2, id_sala2 = conn.query(query, id_turma2)
 
-    conn.execute(f"UPDATE {table_name} SET id_sala = {id_sala1}, horario = {horario1} WHERE id_sala = {id_sala2};")
-    conn.execute(f"UPDATE {table_name} SET id_sala = {id_sala2}, horario = {horario2} WHERE id_sala = {id_sala1};")
+    sql = f"UPDATE {table_name} SET id_sala = %s, horario = %s WHERE id_sala = %s;"
+    conn.execute(sql, (id_sala1, horario1, id_sala2))
+    conn.execute(sql, (id_sala2, horario2, id_sala1))
 
-    df = connection.query(f"SELECT * FROM {table_name}")
+    select = f"SELECT * FROM {table_name}"
+    df = connection.query(select)
     df = pd.DataFrame(df, columns=['horario','id_sala','disciplina','professor', 'numero_cadeiras', 'numero_alunos'] )
 
     return df
 
+@st.cache
+def replace_class(df, id_turma1, id_turma2):
+    id_sala1 = df[df['id'] == id_turma1]['id_sala']
+    id_sala2 = df[df['id'] == id_turma2]['id_sala']
+    cadeiras1 = df[df['id'] == id_turma1]['numero_cadeiras']
+    cadeiras2 = df[df['id'] == id_turma2]['numero_cadeiras']
+    df[df['id'] == id_turma1].replace({ 'id_sala': id_sala1, 'numero_cadeiras': cadeiras1 }, inplace=True)
+    df[df['id'] == id_turma2].replace({ 'id_sala': id_sala2, 'numero_cadeiras': cadeiras2 }, inplace=True)
+    
 @st.cache
 def occupancy_rate(data):
     rate = data['numero_alunos'] * 100 / data['numero_cadeiras']
     return np.mean(rate)
 
 def allocation_table(data, table_name):
-    connection.copy_from(data, table_name, null='', sep=',')
+    connection.copy_from(data, table_name)
 
 # header
 st.title("PASA")
@@ -76,22 +86,35 @@ if st.button('Alocar salas'):
     elif cenario  == "cenário 2":
         df = allocation(data_salas2, data_turmas2)
         table = 'turmas_alocadas_cenario2'
-    connection.insert_values(df, table)
-    # allocation_table(df, table)
     st.write(df)
 
     st.markdown(f"Taxa ocupação média: {round(occupancy_rate(df), 2)}%")
-    
+
+    #allocation_table(df, table)
+    #connection.insert_values(df, table)
+
+    # dataviz
+    st.markdown("### Gráficos")
+    st.write("Quantidade de turmas por horário")
+    st.bar_chart(df['horario'].value_counts())
+
     st.markdown("### Trocar turma")
+
+    #input_troca = st.text_input("Horario/Sala", "25-23")
+    #input1 = input_troca.split('-')[0]
+    #input2 = input_troca.split('-')[1]
+    #replace_class(df, input1, input2 )
+    #st.write(df)
+    #st.markdown(f"Taxa ocupação média: {round(occupancy_rate(df), 2)}%")
+ 
     input1, input2 = st.beta_columns([1, 1])
     with input1:
         st.text_input("Horario/Sala - 1", 'ex: 35')
     with input2:
         st.text_input("Horario/Sala - 2", 'ex: 25')
     if st.button('Trocar'):
-        df = replace_class(connection, table, input1, input2)
-    
-    # dataviz
-    st.markdown("### Gráficos")
-    st.write("Quantidade de turmas por horário")
-    st.bar_chart(df['horario'].value_counts())
+        replace_class(df, input1, input2)
+            #df = replace_class(connection, table, input1, input2)
+        st.write(df)
+        st.markdown(f"Taxa ocupação média: {round(occupancy_rate(df), 2)}%")
+ 
