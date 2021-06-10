@@ -20,6 +20,7 @@ class Config:
                 "password": DB_PASSWORD,
                 "host": DB_HOST,
                 "database": DB_DATABASE,
+                "port": 5432,
             }
         }
     
@@ -27,7 +28,7 @@ class Connection(Config):
     def __init__(self):
         Config.__init__(self)
         try:
-            self.conn = db.connect(**self.config["postgres"])
+            self.conn = db.connect(**self.config["postgres"], sslmode='require')
             self.cur = self.conn.cursor()
         except Exception as e:
             print("Erro na conexão", e)
@@ -43,8 +44,7 @@ class Connection(Config):
     @property
     def connection(self):
         return self.conn
-    
-    @property
+
     def cursor(self):
         return self.cur
 
@@ -61,39 +61,40 @@ class Connection(Config):
         self.cursor.execute(sql, params or ())
         return self.fetchall()
 
-def insert_values(conn, df, table):
-    """
-    Usando psycopg2.extras.execute_values() para inserir dataframe no banco de dados
-    
-    Params:
-        conn: Connection
-        df : DataFrame
-        table_name: str
+    def copy_from(self, args):
+        self.cursor.copy_from(args)
 
-    Returns:
-        void
+    def insert_values(self, df, table):
+        """
+        Usando psycopg2.extras.execute_values() para inserir dataframe no banco de dados
+        
+        Params:
+            conn: Connection
+            df : DataFrame
+            table_name: str
 
-    Raises: 
-        DatabaseError: inserção não foi realizada com sucesso
-    """
+        Returns:
+            void
 
-    # criando uma lista de tupples a partir dos valores do dataframe
-    tuples = [tuple(x) for x in df.to_numpy()]
+        Raises: 
+            DatabaseError: inserção não foi realizada com sucesso
+        """
 
-    # colunas de dataframe separadas por vírgula
-    cols = ','.join(list(df.columns))
+        # criando uma lista de tupples a partir dos valores do dataframe
+        tuples = [tuple(x) for x in df.to_numpy()]
 
-    # executando comando SQL para inserção
-    query  = "INSERT INTO %s(%s) VALUES %%s" % (table, cols)
-    cursor = conn.cursor()
+        # colunas de dataframe separadas por vírgula
+        cols = ','.join(list(df.columns))
 
-    try:
-        extras.execute_values(cursor, query, tuples)
-        conn.commit()
-    except (Exception, db.DatabaseError) as error:
-        print("Error: %s" % error)
-        conn.rollback()
-        cursor.close()
-        return 1
-    print("Inserção dos dados finalizada ✔")
-    cursor.close()
+        # executando comando SQL para inserção
+        query  = "INSERT INTO %s(%s) VALUES %%s" % (table, cols)
+        cursor = self.cursor()
+
+        try:
+            extras.execute_values(cursor, query, tuples)
+            # self.commit()
+        except (Exception, db.DatabaseError) as error:
+            print("Error: %s" % error)
+            self.rollback()
+            return 1
+        print("Inserção dos dados finalizada ✔")
