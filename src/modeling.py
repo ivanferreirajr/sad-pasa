@@ -17,9 +17,16 @@ def find_position(solution, id_sala):
         if solution['id_sala'][i] == id_sala:
             return i
 
+def compare_rate(numero_cadeiras, numero_alunos):
+    taxa_ocupacao = numero_alunos * 100 / numero_cadeiras
+    return taxa_ocupacao >= 70
+    
+    
 def find_class(turma, horario, salas, solution):
     for i in salas.index:
-        if salas['numero_cadeiras'][i] >= turma.numero_alunos and salas['acessivel'][i] == turma.acessibilidade and salas['qualidade'][i] >= turma.qualidade:
+        numCadeiras = salas['numero_cadeiras'][i]
+        numAlunos = turma.numero_alunos
+        if compare_rate(numCadeiras, numAlunos) and salas['acessivel'][i] == turma.acessibilidade and salas['qualidade'][i] >= turma.qualidade:
             if salas['id_sala'][i] not in solution['id_sala']:
                 return salas['numero_cadeiras'][i], salas['id_sala'][i]
             elif salas['id_sala'][i] in solution['id_sala']:
@@ -45,12 +52,16 @@ def allocation(salas, turmas):
         turma = Turma(disciplina, professor, dias_horario, numero_alunos, curso, periodo, acessibilidade, qualidade)
         
         for horario in dias_horario:
-            numero_cadeiras, sala_horario = find_class(turma, horario, salas, solution)
-            solution['horario'].append(horario)
-            solution['id_sala'].append(sala_horario)
-            solution['disciplina'].append(turma.disciplina)
-            solution['professor'].append(turma.professor)
-            solution['numero_cadeiras'].append(numero_cadeiras)
-            solution['numero_alunos'].append(turma.numero_alunos)
+            
+            if find_class(turma, horario, salas, solution) == None :
+                pass
+            else:
+                numero_cadeiras, sala_horario = find_class(turma, horario, salas, solution)
+                solution['horario'].append(horario)
+                solution['id_sala'].append(sala_horario)
+                solution['disciplina'].append(turma.disciplina)
+                solution['professor'].append(turma.professor)
+                solution['numero_cadeiras'].append(numero_cadeiras)
+                solution['numero_alunos'].append(turma.numero_alunos)
     
     return pd.DataFrame(solution)
