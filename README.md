@@ -37,6 +37,14 @@ Quando finalizado, você pode desativar o ambiente virtual do virtualenv com:
 $ deactivate
 ```
 
+Depois da instalação dos pacotes necessários, é preciso criar um arquivo `.env` no diretório raiz do projeto seguindo o padrão definido no `example.env`. Nesse arquivo adicione as informações necessárias para configuração do banco de dados.
+
+Para executar o programa, basta usar o seguinte comando:
+
+```bash
+$ streamlit run src/app.py
+```
+
 ## Deploy
 
 - [Deploy on Heroku](https://sad-pasa.herokuapp.com/) 🚀
